@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOUL of the Cat Leaderboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Luckiest Guy', cursive;
+      background: url('https://cdn.pixabay.com/photo/2016/11/18/17/20/space-1837306_1280.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      overflow-x: hidden;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url('https://media.giphy.com/media/l0Exk8EUzSLsrErEQ/giphy.gif') repeat;
+      opacity: 0.05;
+      pointer-events: none;
+      z-index: 0;
+    }
+    header, footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 2rem;
+      background-color: rgba(0, 0, 0, 0.7);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    header h1 {
+      font-size: 3rem;
+      color: #ff70a6;
+      text-shadow: 2px 2px 4px #000;
+    }
+    header img {
+      width: 120px;
+      margin-bottom: 1rem;
+    }
+    main {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+      text-align: center;
+    }
+    #leaderboard-list {
+      max-width: 700px;
+      margin: 2rem auto;
+      list-style: none;
+      padding: 0;
+      text-align: left;
+      background-color: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      overflow: hidden;
+      backdrop-filter: blur(6px);
+    }
+    #leaderboard-list li {
+      padding: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      transition: background 0.3s ease;
+    }
+    #leaderboard-list li:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    #leaderboard-list li:nth-child(odd) {
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+    footer {
+      font-size: 0.9rem;
+      color: #ccc;
+    }
+    .download-btn {
+      background: #ff70a6;
+      color: #111;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+      box-shadow: 0 0 10px #ff70a6aa;
+      transition: all 0.2s ease;
+    }
+    .download-btn:hover {
+      background: #ffa5ca;
+      box-shadow: 0 0 20px #ff70a6;
+    }
+    a {
+      color: #ffd5ec;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="sotc-logo.png" alt="SOTC Logo">
+    <h1>🐾 SOUL of the Cat Leaderboard 😺</h1>
+    <p>These are the top 100 holders of SOUL of the Cat NFTs — pawsitively purrfect!</p>
+  </header>
+
+  <main>
+    <section id="leaderboard">
+      <h2>Top 100 Cat Lords</h2>
+      <button class="download-btn" onclick="downloadCSV()">📥 Download CSV</button>
+      <ol id="leaderboard-list"><li>Loading whiskers...</li></ol>
+    </section>
+  </main>
+
+  <footer>
+    <p>Meowgically crafted by SOUL of the Cat ✨</p>
+  </footer>
+
+  <script>
+    const blacklist = [
+      "waxdaofarmer", "waxdaomarket", "wombatmaster", "nfthivepacks",
+      "blend.nefty", "swap.taco", "scurvybot.gm", "swap.alcor", "neftyblocksp", "neftyblocksd",
+      "wallet.taco", "waxportalbot", "x", "wallets", "dig.sb"
+    ];
+
+    let leaderboardData = [];
+
+    async function fetchLeaderboard() {
+      const response = await fetch('https://wax.api.atomicassets.io/atomicassets/v1/accounts?collection_name=soulofthecat&limit=1000');
+      const data = await response.json();
+
+      const sorted = data.data
+        .filter(entry => entry.account && entry.assets > 0 && !blacklist.includes(entry.account))
+        .sort((a, b) => b.assets - a.assets)
+        .slice(0, 100);
+
+      leaderboardData = sorted;
+
+      const list = document.getElementById('leaderboard-list');
+      list.innerHTML = '';
+
+      sorted.forEach((entry, index) => {
+        const li = document.createElement('li');
+        let medal = '';
+        if (index === 0) medal = '👑 ';
+        else if (index === 1) medal = '🥈 ';
+        else if (index === 2) medal = '🥉 ';
+
+        const link = `https://wax.atomichub.io/profile/${entry.account}`;
+        li.innerHTML = `${medal}#${index + 1} - <a href="${link}" target="_blank">${entry.account}</a> (${entry.assets} NFTs)`;
+        list.appendChild(li);
+      });
+    }
+
+    function downloadCSV() {
+      let csv = 'Rank,Wallet,NFT Count\n';
+      leaderboardData.forEach((entry, index) => {
+        csv += `${index + 1},${entry.account},${entry.assets}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'soulofthecat_leaderboard.csv';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    fetchLeaderboard();
+  </script>
+</body>
+</html>
